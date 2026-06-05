@@ -68,6 +68,12 @@ class TitleBar(QWidget):
         self._max_button.setText("\u2750" if maximized else "\u25A1")
         self._max_button.setToolTip("Restore" if maximized else "Maximize")
 
+    def set_menu_visible(self, visible: bool) -> None:
+        """Remove the top rounded corners when the menu bar is showing."""
+        self.setProperty("menuVisible", visible)
+        self.style().unpolish(self)
+        self.style().polish(self)
+
     def apply_theme(self, theme: Theme) -> None:  # noqa: ARG002
         # QSS handles theming; this hook stays for symmetry.
         self.style().unpolish(self)
