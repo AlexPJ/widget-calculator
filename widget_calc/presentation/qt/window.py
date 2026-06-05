@@ -437,6 +437,7 @@ class CalculatorWindow(QMainWindow):
         bar = self.menuBar()
         if not bar.isVisible():
             bar.setVisible(True)
+            self.title_bar.set_menu_visible(True)
             bar.setFocus()
 
     def has_active_menu_popup(self) -> bool:
@@ -448,6 +449,7 @@ class CalculatorWindow(QMainWindow):
             self._menu_hide_timer.start()
             return
         self.menuBar().setVisible(False)
+        self.title_bar.set_menu_visible(False)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
         if event.key() == Qt.Key.Key_Alt:

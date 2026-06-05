@@ -24,6 +24,12 @@ def build_stylesheet(theme: Theme) -> str:
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
     }}
+    /* When the menu bar is showing, drop the top rounded corners so the
+       title bar sits flush against the menu bar below it. */
+    QWidget#titleBar[menuVisible="true"] {{
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+    }}
     QLabel#titleBarTitle {{
         color: {theme.text};
         font-size: 11pt;
