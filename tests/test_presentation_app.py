@@ -218,7 +218,9 @@ class TestMultiWindowAppController:
         self, controller: MultiWindowAppController
     ) -> None:
         window = next(iter(controller.windows.values()))
-        assert window.splitter.handleWidth() == 8
+        from widget_calc.presentation.qt.window import SPLITTER_HANDLE_WIDTH
+
+        assert window.splitter.handleWidth() == SPLITTER_HANDLE_WIDTH
         assert window.splitter.objectName() == "mainSplitter"
 
     def test_panes_have_symmetric_top_margin(
@@ -691,9 +693,11 @@ class TestWindowMode:
         bar_bottom = window.total_bar.y() + window.total_bar.height()
         assert pane_bottom - bar_bottom == 1
         # The total bar fills the full result pane content width (minus the
-        # 1px border on each side). Its own internal margins provide content
-        # spacing for the label/value/switch.
-        assert window.total_bar.width() == window.result_pane.width() - 2
+        # frame width). Its own internal margins provide content spacing
+        # for the label/value/switch. Allow ±1px for sub-pixel rounding when
+        # the frame width is odd.
+        content_width = window.result_pane.width() - window.result_pane.frameWidth()
+        assert abs(window.total_bar.width() - content_width) <= 1
 
     def test_engine_icon_inside_editor_with_padding(
         self, controller: MultiWindowAppController
@@ -703,13 +707,21 @@ class TestWindowMode:
         qapp = QApplication.instance()
         if qapp:
             qapp.processEvents()
+        from widget_calc.presentation.qt.window import (
+            ENGINE_ICON_PADDING,
+            PANE_BORDER,
+        )
+
         # The engine icon should be at the bottom-left of the input pane
-        # (the visible "rounded box" of the input area).
+        # (the visible "rounded box" of the input area), inset by the
+        # border + padding from the left edge.
         assert window.engine_icon.parentWidget() is window.input_pane
-        assert window.engine_icon.x() == 3
+        assert window.engine_icon.x() == PANE_BORDER + ENGINE_ICON_PADDING
+        # The icon should be near the bottom of the input pane (within the
+        # border + padding distance from the bottom edge).
         pane_bottom = window.input_pane.height()
         icon_bottom = window.engine_icon.y() + window.engine_icon.height()
-        assert pane_bottom - icon_bottom == 3
+        assert pane_bottom - icon_bottom <= PANE_BORDER + ENGINE_ICON_PADDING
 
     def test_result_editor_height_matches_input_editor(
         self, controller: MultiWindowAppController

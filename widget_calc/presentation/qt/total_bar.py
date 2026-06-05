@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPaintEvent, QPen
+from PySide6.QtGui import QColor, QFont, QPaintEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -130,23 +130,5 @@ class TotalBar(QFrame):
             )
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
-        painter = QPainter(self)
-        try:
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            # Gradient separator: fades from the border color (top) into the
-            # background (bottom) so the bar feels like a continuation of the
-            # results area rather than an overlay. The background itself is
-            # transparent so the parent result pane's results_bg shows through.
-            gradient_height = 6
-            gradient = QLinearGradient(0.0, 0.0, 0.0, float(gradient_height))
-            border_color = QColor(self._border)
-            transparent_border = QColor(self._border)
-            transparent_border.setAlpha(0)
-            gradient.setColorAt(0.0, border_color)
-            gradient.setColorAt(1.0, transparent_border)
-            painter.fillRect(0, 0, self.width(), gradient_height, gradient)
-            painter.setPen(QPen(self._border, 1))
-            painter.drawLine(0, 0, self.width(), 0)
-        finally:
-            painter.end()
+        # Separator is handled by the stylesheet (border-top).
         super().paintEvent(event)

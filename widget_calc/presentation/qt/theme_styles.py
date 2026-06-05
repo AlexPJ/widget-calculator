@@ -89,10 +89,12 @@ def build_stylesheet(theme: Theme) -> str:
     }}
 
     /* Total bar inside the result pane - transparent so the pane's
-       results_bg is visible and clipped by the rounded border. */
+       results_bg is visible and clipped by the rounded border. A 1px
+       top border separates it from the result editor. */
     QFrame#totalBar {{
         background: transparent;
         border: none;
+        border-top: 1px solid {theme.border};
     }}
 
     /* Splitter handle - thin grab area, with a visible line on hover */
