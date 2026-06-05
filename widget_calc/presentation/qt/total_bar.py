@@ -31,7 +31,7 @@ class TotalBar(QFrame):
         super().__init__(parent)
         self.setObjectName("totalBar")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.setFixedHeight(34)
+        self.setFixedHeight(28)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._enabled = True
@@ -43,7 +43,7 @@ class TotalBar(QFrame):
         self._border = QColor("#3d3e42")
         self._background = QColor("#151619")
 
-        self._label = QLabel("Total", self)
+        self._label = QLabel("Total:", self)
         self._label.setObjectName("totalLabel")
         bold = QFont()
         bold.setBold(True)
@@ -53,7 +53,7 @@ class TotalBar(QFrame):
 
         self._value = QLabel("", self)
         self._value.setObjectName("totalValue")
-        self._value.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+        self._value.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         value_font = QFont("Cascadia Mono")
         value_font.setStyleHint(QFont.StyleHint.Monospace)
         value_font.setBold(True)
@@ -133,10 +133,10 @@ class TotalBar(QFrame):
         painter = QPainter(self)
         try:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            painter.fillRect(self.rect(), self._background)
             # Gradient separator: fades from the border color (top) into the
             # background (bottom) so the bar feels like a continuation of the
-            # results area rather than an overlay.
+            # results area rather than an overlay. The background itself is
+            # transparent so the parent result pane's results_bg shows through.
             gradient_height = 6
             gradient = QLinearGradient(0.0, 0.0, 0.0, float(gradient_height))
             border_color = QColor(self._border)

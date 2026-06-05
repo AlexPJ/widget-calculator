@@ -53,25 +53,34 @@ def build_stylesheet(theme: Theme) -> str:
         color: #ffffff;
     }}
 
-    /* Editor panes (input + results) */
+    /* Editor panes (input + results) - symmetric structure: both panes
+       are QFrames with a 1px rounded border, containing a transparent
+       QPlainTextEdit and (for the input side) an invisible spacer matching
+       the total bar's height. */
     QFrame#inputPane {{
-        background: {theme.window_bg};
+        background: {theme.editor_bg};
+        border: 1px solid {theme.border};
+        border-radius: 10px;
+        margin-left: 4px;
+        margin-top: 4px;
     }}
     QFrame#resultPane {{
-        background: {theme.window_bg};
+        background: {theme.results_bg};
         border: 1px solid {theme.border};
         border-radius: 10px;
+        margin-right: 4px;
+        margin-top: 4px;
     }}
     QPlainTextEdit#inputEditor {{
-        background: {theme.editor_bg};
+        background: transparent;
         color: {theme.text};
-        border: 1px solid {theme.border};
-        border-radius: 10px;
+        border: none;
+        border-radius: 0;
         padding: 8px 4px;
         selection-background-color: {theme.selection};
     }}
     QPlainTextEdit#resultEditor {{
-        background: {theme.results_bg};
+        background: transparent;
         color: {theme.accent};
         border: none;
         border-radius: 0;
@@ -79,18 +88,18 @@ def build_stylesheet(theme: Theme) -> str:
         selection-background-color: {theme.selection};
     }}
 
-    /* Total bar inside the result pane */
+    /* Total bar inside the result pane - transparent so the pane's
+       results_bg is visible and clipped by the rounded border. */
     QFrame#totalBar {{
-        background: {theme.results_bg};
+        background: transparent;
         border: none;
     }}
 
-    /* Splitter handle - nearly invisible, shows a 1px dot on hover */
+    /* Splitter handle - thin grab area, with a visible line on hover */
     QSplitter#mainSplitter::handle {{
         background: transparent;
     }}
     QSplitter#mainSplitter::handle:horizontal {{
-        width: 6px;
         background: transparent;
     }}
     QSplitter#mainSplitter::handle:horizontal:hover {{

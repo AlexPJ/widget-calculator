@@ -41,6 +41,9 @@ WINDOW_RADIUS = 10
 MENU_HIDE_DELAY_MS = 250
 RESIZE_MARGIN = 6
 SPLITTER_HANDLE_WIDTH = 2
+PANE_BORDER = 1
+ENGINE_ICON_PADDING = 4
+INPUT_PANE_LEFT_MARGIN = 8
 
 
 class _ResizeCursorFilter(QObject):
@@ -166,37 +169,42 @@ class CalculatorWindow(QMainWindow):
         root = QFrame()
         root.setObjectName("rootPanel")
         root_layout = QVBoxLayout(root)
-        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setContentsMargins(0, 0, 0, 4)
         root_layout.setSpacing(0)
 
         root_layout.addWidget(self.title_bar)
 
+        self.input_pane = QFrame()
+        self.input_pane.setObjectName("inputPane")
+        input_pane_layout = QVBoxLayout(self.input_pane)
+        # Symmetric layout with the result pane: no left/right margin so the
+        # editor fills the full pane width. The editor's own internal padding
+        # (8px 4px) provides the text spacing from the rounded border.
+        input_pane_layout.setContentsMargins(0, 4, 0, 0)
+        input_pane_layout.setSpacing(0)
+        input_pane_layout.addWidget(self.editor, stretch=1)
+
+        self._input_spacer = QWidget()
+        self._input_spacer.setFixedHeight(self.total_bar.height())
+        self._input_spacer.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, False)
+        input_pane_layout.addWidget(self._input_spacer)
+
         self.result_pane = QFrame()
         self.result_pane.setObjectName("resultPane")
         result_pane_layout = QVBoxLayout(self.result_pane)
-        result_pane_layout.setContentsMargins(0, 3, 8, 7)
+        # No left/right/bottom margin so the total bar fills the full pane
+        # width and sits flush against the bottom border. The total bar's
+        # own internal margins (12px) provide content spacing.
+        result_pane_layout.setContentsMargins(0, 4, 0, 0)
         result_pane_layout.setSpacing(0)
         result_pane_layout.addWidget(self.results, stretch=1)
         result_pane_layout.addWidget(self.total_bar)
 
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.splitter.setObjectName("mainSplitter")
-        editor_wrapper = QFrame()
-        editor_wrapper.setObjectName("inputPane")
-        editor_layout = QVBoxLayout(editor_wrapper)
-        editor_layout.setContentsMargins(8, 4, 0, 8)
-        editor_layout.setSpacing(0)
-        editor_layout.addWidget(self.editor, stretch=1)
-        self._input_spacer = QWidget()
-        self._input_spacer.setFixedHeight(self.total_bar.height())
-        self._input_spacer.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, False)
-        editor_layout.addWidget(self._input_spacer)
-
-        self.splitter = QSplitter(Qt.Orientation.Horizontal)
-        self.splitter.setObjectName("mainSplitter")
-        self.splitter.addWidget(editor_wrapper)
+        self.splitter.addWidget(self.input_pane)
         self.splitter.addWidget(self.result_pane)
-        self.splitter.setStretchFactor(0, 3)
+        self.splitter.setStretchFactor(0, 2)
         self.splitter.setStretchFactor(1, 2)
         self.splitter.setSizes([390, 230])
         self.splitter.setChildrenCollapsible(False)
@@ -206,39 +214,28 @@ class CalculatorWindow(QMainWindow):
 
         self.setCentralWidget(root)
 
-        self.engine_icon.setParent(editor_wrapper)
+        self.engine_icon.setParent(self.input_pane)
         self.engine_icon.raise_()
         self._position_engine_icon()
-        editor_wrapper.installEventFilter(self)
-
-        self.result_pane.installEventFilter(self)
-        self.engine_icon.setParent(self.result_pane)
-        self.engine_icon.raise_()
-        self._position_engine_icon()
+        self.input_pane.installEventFilter(self)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
-        if obj is self.result_pane and event.type() == QEvent.Type.Resize:
-            self._position_total_bar()
+        if obj is self.input_pane and event.type() == QEvent.Type.Resize:
             self._position_engine_icon()
         return super().eventFilter(obj, event)
 
     def _position_engine_icon(self) -> None:
-        if self.result_pane is None:
+        if self.input_pane is None:
             return
-        padding = 2
-        x = 1 + padding
-        y = self.total_bar.y() - self.engine_icon.height() - padding
+        # Place the icon at the bottom-left of the input pane (the visible
+        # rounded box), just inside the 1px border with a small padding.
+        x = PANE_BORDER + ENGINE_ICON_PADDING
+        y = (
+            self.input_pane.height()
+            - PANE_BORDER
+            - self.engine_icon.height()
+        )
         self.engine_icon.move(max(0, x), max(0, y))
-
-    def _position_total_bar(self) -> None:
-        if self.result_pane is None:
-            return
-        margin = 8
-        x = 0
-        y = self.result_pane.height() - self.total_bar.height() - margin
-        self.total_bar.setFixedWidth(self.result_pane.width())
-        self.total_bar.raise_()
-        self.total_bar.move(max(0, x), max(0, y))
 
     def _get_resize_edges(self, pos: QPoint) -> Qt.Edge:
         edges = Qt.Edge(0)
@@ -307,7 +304,6 @@ class CalculatorWindow(QMainWindow):
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         super().resizeEvent(event)
-        self._position_total_bar()
         self._position_engine_icon()
         self._apply_window_mask()
         self._emit_geometry()

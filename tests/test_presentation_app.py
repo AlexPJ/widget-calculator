@@ -218,21 +218,23 @@ class TestMultiWindowAppController:
         self, controller: MultiWindowAppController
     ) -> None:
         window = next(iter(controller.windows.values()))
-        assert window.splitter.handleWidth() == 2
+        assert window.splitter.handleWidth() == 8
         assert window.splitter.objectName() == "mainSplitter"
 
     def test_panes_have_symmetric_top_margin(
         self, controller: MultiWindowAppController
     ) -> None:
         window = next(iter(controller.windows.values()))
-        input_layout = window.findChild(type(window.result_pane).__bases__[0], "inputPane")
+        input_pane = window.input_pane
         result_pane = window.result_pane
-        if input_layout is None:
-            return
-        assert input_layout.layout().contentsMargins().top() == 4
-        # Result pane has a 1px border, so its top margin is 1px less to
-        # keep the result editor's height matching the input editor.
-        assert result_pane.layout().contentsMargins().top() == 3
+        input_layout = input_pane.layout()
+        result_layout = result_pane.layout()
+        assert input_layout is not None
+        assert result_layout is not None
+        # Both panes have a 4px top margin to align the input frame's top
+        # edge with the result editor's top edge.
+        assert input_layout.contentsMargins().top() == 4
+        assert result_layout.contentsMargins().top() == 4
 
     def test_menu_bar_starts_hidden(
         self, controller: MultiWindowAppController
@@ -678,14 +680,20 @@ class TestWindowMode:
         qapp = QApplication.instance()
         if qapp:
             qapp.processEvents()
-        # The total bar overlays the bottom of the result editor (inside the
-        # result pane). It does not steal vertical space from the editor.
+        # The total bar lives at the bottom of the result pane, just below the
+        # result editor. It is part of the layout (not an overlay) and shares
+        # the parent with the result editor.
         assert window.total_bar.parentWidget() is window.result_pane
+        # The total bar is below the result editor.
+        assert window.total_bar.y() >= window.results.y() + window.results.height()
+        # The total bar sits flush against the result pane's bottom border.
         pane_bottom = window.result_pane.height()
         bar_bottom = window.total_bar.y() + window.total_bar.height()
-        assert pane_bottom - bar_bottom <= 12
-        # The total bar spans the full width of the result pane.
-        assert window.total_bar.width() == window.result_pane.width()
+        assert pane_bottom - bar_bottom == 1
+        # The total bar fills the full result pane content width (minus the
+        # 1px border on each side). Its own internal margins provide content
+        # spacing for the label/value/switch.
+        assert window.total_bar.width() == window.result_pane.width() - 2
 
     def test_engine_icon_inside_editor_with_padding(
         self, controller: MultiWindowAppController
@@ -695,18 +703,13 @@ class TestWindowMode:
         qapp = QApplication.instance()
         if qapp:
             qapp.processEvents()
-        # The engine icon should be at the bottom-left, above the total bar.
-        # 1-2px padding from the result_pane's left border (which is the
-        # editor's left edge).
-        assert 1 <= window.engine_icon.x() <= 4
-        # 1-2px padding from the total bar's top edge.
+        # The engine icon should be at the bottom-left of the input pane
+        # (the visible "rounded box" of the input area).
+        assert window.engine_icon.parentWidget() is window.input_pane
+        assert window.engine_icon.x() == 3
+        pane_bottom = window.input_pane.height()
         icon_bottom = window.engine_icon.y() + window.engine_icon.height()
-        bar_top = window.total_bar.y()
-        assert 0 < bar_top - icon_bottom <= 4
-        # The engine icon should not overlap the switch.
-        switch_x = window.total_bar._switch.x()
-        icon_right = window.engine_icon.x() + window.engine_icon.width()
-        assert icon_right <= switch_x
+        assert pane_bottom - icon_bottom == 3
 
     def test_result_editor_height_matches_input_editor(
         self, controller: MultiWindowAppController
@@ -717,7 +720,21 @@ class TestWindowMode:
         if qapp:
             qapp.processEvents()
         # The result editor and input editor should have the same height
-        # (the result_pane has a 1px border; margins compensate).
+        # (both are inside a 1px-border QFrame with matching margins).
         result_h = window.results.height()
         input_h = window.editor.height()
-        assert abs(result_h - input_h) <= 1
+        assert result_h == input_h
+
+    def test_input_frame_wraps_editor(
+        self, controller: MultiWindowAppController
+    ) -> None:
+        window = next(iter(controller.windows.values()))
+        window.show()
+        qapp = QApplication.instance()
+        if qapp:
+            qapp.processEvents()
+        # The input pane and result pane are symmetric: both are QFrames
+        # that contain their editor as a direct child (and the result pane
+        # also contains the total bar).
+        assert window.editor.parentWidget() is window.input_pane
+        assert window.results.parentWidget() is window.result_pane
