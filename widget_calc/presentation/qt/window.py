@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 from widget_calc.domain.models import MAX_OPACITY, MIN_OPACITY
 from widget_calc.domain.themes import Theme
 
+from .calculator_icon import cached_app_icon
 from .engine_icon import EngineIconButton
 from .result_editor import ResultEditor
 from .theme_styles import build_stylesheet
@@ -119,8 +120,12 @@ class CalculatorWindow(QMainWindow):
         self.resize(620, 340)
 
         # Frameless, always on top, with our own custom title bar.
+        # WindowSystemMenuHint keeps the taskbar icon visible on Windows
+        # even though we draw our own title bar.
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
+        self.setWindowFlag(Qt.WindowType.WindowSystemMenuHint, True)
+        self.setWindowIcon(cached_app_icon())
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setMouseTracking(True)
 

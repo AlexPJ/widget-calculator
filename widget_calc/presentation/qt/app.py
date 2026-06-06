@@ -20,6 +20,20 @@ from .menu_bar import MenuActions, build_menu_bar
 from .settings_dialog import SettingsDialog
 from .window import CalculatorWindow
 
+
+def _set_windows_app_user_model_id() -> None:
+    """Set the Windows AppUserModelID so the taskbar uses our icon."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "WidgetCalculator.App"
+        )
+    except (AttributeError, OSError):
+        pass
+
 EVALUATE_DEBOUNCE_MS = 120
 SAVE_DEBOUNCE_MS = 250
 
@@ -213,6 +227,7 @@ class MultiWindowAppController:
             on_open_settings=self._open_settings,
             initial_opacity=self.current_opacity,
         )
+        window.setWindowIcon(cached_app_icon())
         if not self.always_on_top:
             window.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, False)
             window.show()  # re-apply flags
@@ -538,6 +553,7 @@ def run(argv: list[str]) -> int:
     parser.add_argument("--background", action="store_true", help="Start hidden in system tray")
     args = parser.parse_args(argv[1:])
 
+    _set_windows_app_user_model_id()
     app = QApplication(argv)
     app.setQuitOnLastWindowClosed(False)
 
