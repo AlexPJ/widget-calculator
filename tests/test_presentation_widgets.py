@@ -485,3 +485,91 @@ class TestTotalBar:
         bar.repaint()
         bar.set_enabled(False)
         bar.repaint()
+
+    def test_click_value_copies_to_clipboard(
+        self, qapp: QApplication, monkeypatch: pytest.MonkeyPatch  # noqa: ARG002
+    ) -> None:
+        from PySide6.QtGui import QGuiApplication
+
+        class _FakeClipboard:
+            def __init__(self) -> None:
+                self.text_value = ""
+
+            def setText(self, text: str) -> None:  # noqa: N802
+                self.text_value = text
+
+        fake = _FakeClipboard()
+        monkeypatch.setattr(QGuiApplication, "clipboard", staticmethod(lambda: fake))
+
+        bar = TotalBar()
+        bar.set_total("42")
+        received: list[str] = []
+        bar.value_copied.connect(received.append)
+
+        from PySide6.QtCore import QEvent, QPointF
+        from PySide6.QtGui import QMouseEvent
+
+        press = QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            QPointF(5.0, 5.0),
+            QPointF(5.0, 5.0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        release = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(5.0, 5.0),
+            QPointF(5.0, 5.0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        bar._value.mousePressEvent(press)
+        bar._value.mouseReleaseEvent(release)
+
+        assert fake.text_value == "42"
+        assert received == ["42"]
+
+    def test_click_value_does_not_copy_when_disabled(
+        self, qapp: QApplication, monkeypatch: pytest.MonkeyPatch  # noqa: ARG002
+    ) -> None:
+        from PySide6.QtGui import QGuiApplication
+
+        class _FakeClipboard:
+            def __init__(self) -> None:
+                self.text_value = ""
+
+            def setText(self, text: str) -> None:  # noqa: N802
+                self.text_value = text
+
+        fake = _FakeClipboard()
+        monkeypatch.setattr(QGuiApplication, "clipboard", staticmethod(lambda: fake))
+
+        bar = TotalBar()
+        bar.set_total("42")
+        bar.set_enabled(False)
+
+        from PySide6.QtCore import QEvent, QPointF
+        from PySide6.QtGui import QMouseEvent
+
+        press = QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            QPointF(5.0, 5.0),
+            QPointF(5.0, 5.0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        release = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(5.0, 5.0),
+            QPointF(5.0, 5.0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        bar._value.mousePressEvent(press)
+        bar._value.mouseReleaseEvent(release)
+
+        assert fake.text_value == ""
