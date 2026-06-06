@@ -335,7 +335,14 @@ class MultiWindowAppController:
         anchor = self._active_window()
         if anchor is None:
             return
+        anchor.set_history_clear_callback(self._clear_history)
         anchor.show_history_dialog(self.workspace.history, self.current_theme)
+
+    def _clear_history(self) -> None:
+        self.workspace.clear_history()
+        for window in self.windows.values():
+            window.update_history(self.workspace.history)
+        self._save_state()
 
     def _show_about(self) -> None:
         anchor = self._active_window()

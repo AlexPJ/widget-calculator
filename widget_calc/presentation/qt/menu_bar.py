@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence, QShortcut
-from PySide6.QtWidgets import QMenuBar
+from PySide6.QtWidgets import QMenu, QMenuBar
 
 if TYPE_CHECKING:
     from widget_calc.presentation.qt.window import CalculatorWindow
@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 class MenuActions:
     def __init__(self) -> None:
         self.new_window: QAction
-        self.new_window_shortcut: QShortcut
         self.settings: QAction
         self.quit: QAction
         self.undo: QAction
@@ -25,6 +24,7 @@ class MenuActions:
         self.show_history: QAction
         self.about: QAction
         self.help: QAction
+        self._shortcuts: list[QShortcut]
 
 
 def build_menu_bar(
@@ -41,72 +41,77 @@ def build_menu_bar(
     bar.setVisible(False)
 
     actions = MenuActions()
+    actions._shortcuts = []
+
+    def add_action(
+        menu: QMenu,
+        text: str,
+        shortcut: QKeySequence | QKeySequence.StandardKey,
+        slot: Callable[[], None],
+    ) -> QAction:
+        action = QAction(text, window)
+        action.setShortcut(shortcut)
+        action.triggered.connect(slot)
+        menu.addAction(action)
+        # Window-level QShortcut fallback: QAction shortcuts only fire when
+        # the action is in an active shortcut chain (visible menu/toolbar).
+        # Since the menu bar is hidden by default, add a QShortcut so the
+        # key binding works regardless of menu bar visibility.
+        sc = QShortcut(shortcut, window)
+        sc.setContext(Qt.ShortcutContext.WindowShortcut)
+        sc.activated.connect(slot)
+        actions._shortcuts.append(sc)
+        return action
 
     file_menu = bar.addMenu("&File")
-    actions.new_window = QAction("&New window", window)
-    actions.new_window.setShortcut(QKeySequence("Ctrl+N"))
-    actions.new_window.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
-    actions.new_window.triggered.connect(on_new_window)
-    file_menu.addAction(actions.new_window)
-    # Window-level shortcut fallback: works even when the menu bar is hidden
-    new_window_shortcut = QShortcut(QKeySequence("Ctrl+N"), window)
-    new_window_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-    new_window_shortcut.activated.connect(on_new_window)
-    actions.new_window_shortcut = new_window_shortcut
+    actions.new_window = add_action(
+        file_menu, "&New window", QKeySequence("Ctrl+N"), on_new_window
+    )
 
-    actions.settings = QAction("&Settings...", window)
-    actions.settings.setShortcut(QKeySequence("Ctrl+,"))
-    actions.settings.triggered.connect(on_show_settings)
-    file_menu.addAction(actions.settings)
+    actions.settings = add_action(
+        file_menu, "&Settings...", QKeySequence("Ctrl+,"), on_show_settings
+    )
 
     file_menu.addSeparator()
 
-    actions.quit = QAction("&Quit", window)
-    actions.quit.setShortcut(QKeySequence("Ctrl+Q"))
-    actions.quit.triggered.connect(on_quit)
-    file_menu.addAction(actions.quit)
+    actions.quit = add_action(
+        file_menu, "&Quit", QKeySequence("Ctrl+Q"), on_quit
+    )
 
     edit_menu = bar.addMenu("&Edit")
-    actions.undo = QAction("&Undo", window)
-    actions.undo.setShortcut(QKeySequence.StandardKey.Undo)
-    actions.undo.triggered.connect(window.editor.undo)
-    edit_menu.addAction(actions.undo)
+    actions.undo = add_action(
+        edit_menu, "&Undo", QKeySequence.StandardKey.Undo, window.editor.undo
+    )
 
-    actions.redo = QAction("&Redo", window)
-    actions.redo.setShortcut(QKeySequence.StandardKey.Redo)
-    actions.redo.triggered.connect(window.editor.redo)
-    edit_menu.addAction(actions.redo)
+    actions.redo = add_action(
+        edit_menu, "&Redo", QKeySequence.StandardKey.Redo, window.editor.redo
+    )
 
     edit_menu.addSeparator()
 
-    actions.cut = QAction("Cu&t", window)
-    actions.cut.setShortcut(QKeySequence.StandardKey.Cut)
-    actions.cut.triggered.connect(window.editor.cut)
-    edit_menu.addAction(actions.cut)
+    actions.cut = add_action(
+        edit_menu, "Cu&t", QKeySequence.StandardKey.Cut, window.editor.cut
+    )
 
-    actions.copy = QAction("&Copy", window)
-    actions.copy.setShortcut(QKeySequence.StandardKey.Copy)
-    actions.copy.triggered.connect(window.editor.copy)
-    edit_menu.addAction(actions.copy)
+    actions.copy = add_action(
+        edit_menu, "&Copy", QKeySequence.StandardKey.Copy, window.editor.copy
+    )
 
-    actions.paste = QAction("&Paste", window)
-    actions.paste.setShortcut(QKeySequence.StandardKey.Paste)
-    actions.paste.triggered.connect(window.editor.paste)
-    edit_menu.addAction(actions.paste)
+    actions.paste = add_action(
+        edit_menu, "&Paste", QKeySequence.StandardKey.Paste, window.editor.paste
+    )
 
     view_menu = bar.addMenu("&View")
-    actions.show_history = QAction("Show &history", window)
-    actions.show_history.setShortcut(QKeySequence("Ctrl+H"))
-    actions.show_history.triggered.connect(on_show_history)
-    view_menu.addAction(actions.show_history)
+    actions.show_history = add_action(
+        view_menu, "Show &history", QKeySequence("Ctrl+H"), on_show_history
+    )
 
     help_menu = bar.addMenu("&Help")
-    actions.about = QAction("&About", window)
-    actions.about.triggered.connect(on_about)
-    help_menu.addAction(actions.about)
-    actions.help = QAction("&Help", window)
-    actions.help.setShortcut(QKeySequence("F1"))
-    actions.help.triggered.connect(on_help)
-    help_menu.addAction(actions.help)
+    actions.about = add_action(
+        help_menu, "&About", QKeySequence(""), on_about
+    )
+    actions.help = add_action(
+        help_menu, "&Help", QKeySequence("F1"), on_help
+    )
 
     return bar, actions

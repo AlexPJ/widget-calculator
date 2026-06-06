@@ -373,10 +373,56 @@ class TestMenuBar:
             # The action has the shortcut
             assert actions.new_window.shortcut().toString().lower() == "ctrl+n"
             # The window-level QShortcut is also registered
-            assert actions.new_window_shortcut.key().toString().lower() == "ctrl+n"
+            assert actions._shortcuts[0].key().toString().lower() == "ctrl+n"
             # Activating the window-level shortcut directly invokes the callback
-            actions.new_window_shortcut.activated.emit()
+            actions._shortcuts[0].activated.emit()
             assert called == [1]
+        finally:
+            window.close()
+            window.deleteLater()
+
+    def test_all_shortcuts_have_window_shortcut_fallback(self) -> None:
+        from PySide6.QtWidgets import QMainWindow
+
+        from widget_calc.presentation.qt.menu_bar import build_menu_bar
+
+        class _StubEditor:
+            def undo(self) -> None: ...
+            def redo(self) -> None: ...
+            def copy(self) -> None: ...
+            def paste(self) -> None: ...
+            def cut(self) -> None: ...
+
+        window = QMainWindow()
+        window.editor = _StubEditor()  # type: ignore[attr-defined]
+        try:
+            _bar, actions = build_menu_bar(
+                window=window,  # type: ignore[arg-type]
+                on_new_window=lambda: None,
+                on_show_settings=lambda: None,
+                on_quit=lambda: None,
+                on_show_history=lambda: None,
+                on_about=lambda: None,
+                on_help=lambda: None,
+            )
+            # Every action with a shortcut must also have a window-level
+            # QShortcut fallback so the key works while the menu bar is hidden.
+            shortcut_keys = {sc.key().toString().lower() for sc in actions._shortcuts}
+            for action in (
+                actions.new_window,
+                actions.settings,
+                actions.quit,
+                actions.undo,
+                actions.redo,
+                actions.cut,
+                actions.copy,
+                actions.paste,
+                actions.show_history,
+                actions.help,
+            ):
+                key = action.shortcut().toString().lower()
+                if key:
+                    assert key in shortcut_keys, f"Missing QShortcut for {key}"
         finally:
             window.close()
             window.deleteLater()

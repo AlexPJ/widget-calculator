@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QDialog,
     QFrame,
+    QHBoxLayout,
     QMainWindow,
     QMenu,
     QPlainTextEdit,
@@ -110,6 +111,8 @@ class CalculatorWindow(QMainWindow):
         self.window_id = window_id
         self._close_handler: Callable[[CalculatorWindow], bool] | None = None
         self._history_dialog: QDialog | None = None
+        self._history_box: QPlainTextEdit | None = None
+        self._on_history_clear_callback: Callable[[], None] | None = None
         self._theme: Theme | None = None
         self._on_open_settings = on_open_settings
         self._maximized = False
@@ -419,23 +422,56 @@ class CalculatorWindow(QMainWindow):
             history_box.setReadOnly(True)
             history_box.setWordWrapMode(QTextOption.WrapMode.NoWrap)
 
+            button_row = QHBoxLayout()
+            button_row.setContentsMargins(0, 0, 0, 0)
+            button_row.setSpacing(8)
+
+            clear_button = QPushButton("Clear", dialog)
+            clear_button.setObjectName("historyClearButton")
+            clear_button.clicked.connect(self._on_history_clear)
+
             close_button = QPushButton("Close", dialog)
             close_button.clicked.connect(dialog.close)
 
+            button_row.addWidget(clear_button)
+            button_row.addStretch(1)
+            button_row.addWidget(close_button)
+
             body = QVBoxLayout(dialog)
             body.addWidget(history_box)
-            body.addWidget(close_button)
+            body.addLayout(button_row)
 
             self._history_dialog = dialog
+            self._history_box = history_box
 
         self._history_dialog.setStyleSheet(build_stylesheet(theme))
-        found_box: QPlainTextEdit | None = self._history_dialog.findChild(QPlainTextEdit, "historyBox")
-        if found_box is not None:
-            found_box.setPlainText("\n".join(history_items) if history_items else "No commands yet.")
+        self._refresh_history_box(history_items)
 
         self._history_dialog.show()
         self._history_dialog.raise_()
         self._history_dialog.activateWindow()
+
+    def _refresh_history_box(self, history_items: list[str]) -> None:
+        if not hasattr(self, "_history_box") or self._history_box is None:
+            return
+        if history_items:
+            self._history_box.setPlainText("\n".join(history_items))
+        else:
+            self._history_box.setPlainText("No commands yet.")
+
+    def _on_history_clear(self) -> None:
+        if self._on_history_clear_callback is None:
+            return
+        self._on_history_clear_callback()
+
+    def set_history_clear_callback(self, callback: Callable[[], None]) -> None:
+        self._on_history_clear_callback = callback
+
+    def update_history(self, history_items: list[str]) -> None:
+        """Update the history box without re-opening the dialog."""
+        if not hasattr(self, "_history_box") or self._history_box is None:
+            return
+        self._refresh_history_box(history_items)
 
     def show_menu_bar(self) -> None:
         self._menu_hide_timer.stop()

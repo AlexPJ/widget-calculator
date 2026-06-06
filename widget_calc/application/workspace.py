@@ -25,6 +25,11 @@ class WorkspaceService:
 
         state = initial_state or AppState()
         self.history: list[str] = [str(item).strip() for item in state.history if str(item).strip()][-MAX_HISTORY_ITEMS:]
+        # Mark where the current session begins. Everything before this index
+        # is from the previous session; everything from here on is added during
+        # the current session. On next startup, the loaded history becomes the
+        # new "previous session" and a fresh current session starts.
+        self._session_start: int = len(self.history)
         self.theme_id = get_theme(state.theme_id).theme_id if state.theme_id else DEFAULT_THEME_ID
         self.startup_initialized = state.startup_initialized
         self.window_opacity: float = normalize_opacity(state.window_opacity)
@@ -164,6 +169,12 @@ class WorkspaceService:
 
         if len(self.history) > MAX_HISTORY_ITEMS:
             self.history = self.history[-MAX_HISTORY_ITEMS:]
+            self._session_start = max(0, self._session_start - (len(self.history) - MAX_HISTORY_ITEMS))
+
+    def clear_history(self) -> None:
+        """Remove all commands from the history (both sessions)."""
+        self.history.clear()
+        self._session_start = 0
 
     def snapshot(self) -> AppState:
         return AppState(
