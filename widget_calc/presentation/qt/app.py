@@ -252,8 +252,12 @@ class MultiWindowAppController:
             on_show_history=self._show_history,
             on_about=self._show_about,
             on_help=self._show_help,
+            on_install=self._gui_install,
+            on_uninstall=self._gui_uninstall,
+            on_update=self._gui_update,
         )
         self.window_menus[window_id] = actions
+        self._update_app_menu_state(actions)
 
         window.apply_theme(self.current_theme)
         self.windows[window_id] = window
@@ -368,6 +372,75 @@ class MultiWindowAppController:
             "Press Alt to show the menu bar. Click a result line to copy it. "
             "Use the gear icon (bottom-right) for settings.",
         )
+
+    def _is_installed(self) -> bool:
+        from widget_calc.infrastructure.startup_registry import WindowsStartupRegistry
+
+        return WindowsStartupRegistry().is_enabled()
+
+    def _update_app_menu_state(self, actions: MenuActions) -> None:
+        installed = self._is_installed()
+        actions.install.setEnabled(not installed)
+        actions.uninstall.setEnabled(installed)
+
+    def _gui_install(self) -> None:
+        anchor = self._active_window()
+        reply = QMessageBox.question(
+            anchor,
+            "Install",
+            "Install Widget Calculator to run automatically when Windows starts?\n\n"
+            "The app will be copied to ./WidgetCalculator/ in the current folder.",
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        from scripts.installer import install
+
+        code = install()
+        if code == 0:
+            QMessageBox.information(
+                anchor, "Installed", "Widget Calculator is now installed and will start with Windows."
+            )
+        for actions in self.window_menus.values():
+            self._update_app_menu_state(actions)
+
+    def _gui_uninstall(self) -> None:
+        anchor = self._active_window()
+        reply = QMessageBox.question(
+            anchor,
+            "Uninstall",
+            "Remove Widget Calculator from Windows startup and delete the install folder?",
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        from scripts.installer import uninstall
+
+        code = uninstall()
+        if code == 0:
+            QMessageBox.information(anchor, "Uninstalled", "Widget Calculator has been removed.")
+        for actions in self.window_menus.values():
+            self._update_app_menu_state(actions)
+
+    def _gui_update(self) -> None:
+        anchor = self._active_window()
+        from scripts.installer import _repo_root
+
+        repo = _repo_root()
+        if repo is None:
+            QMessageBox.information(
+                anchor,
+                "Update",
+                "Updates are only available for development installs (when run from a git repository).",
+            )
+            return
+        from scripts.installer import update
+
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            code = update()
+        finally:
+            QApplication.restoreOverrideCursor()
+        if code == 0:
+            QMessageBox.information(anchor, "Update", "Update complete. The app will restart shortly.")
 
     def _create_new_window(self) -> None:
         if self.window_mode == WINDOW_MODE_NEW:
@@ -558,7 +631,22 @@ class MultiWindowAppController:
 def run(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--background", action="store_true", help="Start hidden in system tray")
+    parser.add_argument(
+        "--install", action="store_true", help="Install to ./WidgetCalculator/ and add to startup"
+    )
+    parser.add_argument("--uninstall", action="store_true", help="Remove from startup and delete install")
+    parser.add_argument("--update", action="store_true", help="Check git for new commits and rebuild")
     args = parser.parse_args(argv[1:])
+
+    if args.install:
+        from scripts.installer import install
+        return install()
+    if args.uninstall:
+        from scripts.installer import uninstall
+        return uninstall()
+    if args.update:
+        from scripts.installer import update
+        return update()
 
     _set_windows_app_user_model_id()
     app = QApplication(argv)

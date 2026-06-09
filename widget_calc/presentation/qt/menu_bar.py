@@ -24,6 +24,9 @@ class MenuActions:
         self.show_history: QAction
         self.about: QAction
         self.help: QAction
+        self.install: QAction
+        self.uninstall: QAction
+        self.update: QAction
         self._shortcuts: list[QShortcut]
 
 
@@ -35,6 +38,9 @@ def build_menu_bar(
     on_show_history: Callable[[], None],
     on_about: Callable[[], None],
     on_help: Callable[[], None],
+    on_install: Callable[[], None],
+    on_uninstall: Callable[[], None],
+    on_update: Callable[[], None],
 ) -> tuple[QMenuBar, MenuActions]:
     bar = window.menuBar()
     bar.setNativeMenuBar(False)
@@ -113,5 +119,17 @@ def build_menu_bar(
     actions.help = add_action(
         help_menu, "&Help", QKeySequence("F1"), on_help
     )
+
+    app_menu = bar.addMenu("&App")
+    actions.install = QAction("&Install (start with Windows)", app_menu)
+    actions.install.triggered.connect(on_install)
+    app_menu.addAction(actions.install)
+    actions.uninstall = QAction("&Uninstall", app_menu)
+    actions.uninstall.triggered.connect(on_uninstall)
+    app_menu.addAction(actions.uninstall)
+    app_menu.addSeparator()
+    actions.update = QAction("Check for &updates", app_menu)
+    actions.update.triggered.connect(on_update)
+    app_menu.addAction(actions.update)
 
     return bar, actions

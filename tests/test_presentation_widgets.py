@@ -369,6 +369,9 @@ class TestMenuBar:
                 on_show_history=lambda: None,
                 on_about=lambda: None,
                 on_help=lambda: None,
+                on_install=lambda: None,
+                on_uninstall=lambda: None,
+                on_update=lambda: None,
             )
             # The action has the shortcut
             assert actions.new_window.shortcut().toString().lower() == "ctrl+n"
@@ -404,6 +407,9 @@ class TestMenuBar:
                 on_show_history=lambda: None,
                 on_about=lambda: None,
                 on_help=lambda: None,
+                on_install=lambda: None,
+                on_uninstall=lambda: None,
+                on_update=lambda: None,
             )
             # Every action with a shortcut must also have a window-level
             # QShortcut fallback so the key works while the menu bar is hidden.

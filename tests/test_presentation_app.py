@@ -252,6 +252,9 @@ class TestMultiWindowAppController:
             on_show_history=lambda: None,
             on_about=lambda: None,
             on_help=lambda: None,
+            on_install=lambda: None,
+            on_uninstall=lambda: None,
+            on_update=lambda: None,
         )
         assert window.menuBar().isVisible() is False
 

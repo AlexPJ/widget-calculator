@@ -11,18 +11,18 @@ def build_stylesheet(theme: Theme) -> str:
     }}
     QFrame#rootPanel {{
         background: {theme.window_bg};
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-        border-bottom-left-radius: 10px;
-        border-bottom-right-radius: 10px;
+        border-top-left-radius: 15%;
+        border-top-right-radius: 15%;
+        border-bottom-left-radius: 15%;
+        border-bottom-right-radius: 15%;
     }}
 
     /* Custom title bar */
     QWidget#titleBar {{
         background: {theme.surface_bg};
         border: none;
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
+        border-top-left-radius: 15%;
+        border-top-right-radius: 15%;
     }}
     /* When the menu bar is showing, drop the top rounded corners so the
        title bar sits flush against the menu bar below it. */
