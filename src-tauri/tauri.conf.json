@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WidgetCalculator",
+  "version": "0.1.0",
+  "identifier": "com.alex.widgetcalculator",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true,
+    "shortDescription": "Widget calculator",
+    "longDescription": "Multi-window widget calculator with variables, unit and currency conversion, running totals, command history and themes."
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZCNzBFM0MyOUNERjk4QzUKUldURm1OK2N3dU53YTZpcStPUnVtVDk3UmxxbE96V01nNTdDa2tyZ1ZxS1Uyc29TMjcwYm1BdzYK",
+      "endpoints": [
+        "https://github.com/AlexPJ/widget-calculator/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

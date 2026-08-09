@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Widget Calculator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Our own title bar: the native one cannot follow the theme -->
+    <header class="titlebar" id="titlebar">
+      <span class="tb-title" id="tb-title">Calculator</span>
+      <span class="tb-subtitle" id="tb-subtitle"></span>
+      <button class="tb-button" id="tb-min" title="Minimize" tabindex="-1">&#8212;</button>
+      <button class="tb-button" id="tb-max" title="Maximize" tabindex="-1">&#9633;</button>
+      <button class="tb-button tb-close" id="tb-close" title="Close" tabindex="-1">&#10005;</button>
+    </header>
+
+    <!-- Revealed by pressing Alt, like the Qt menu bar it replaces -->
+    <nav class="menubar" id="menubar" hidden>
+      <div class="menu">
+        <button class="menu-label">File</button>
+        <div class="menu-items">
+          <button data-action="new-window">New window<kbd>Ctrl+N</kbd></button>
+          <button data-action="settings">Settings...<kbd>Ctrl+,</kbd></button>
+          <hr />
+          <button data-action="quit">Quit<kbd>Ctrl+Q</kbd></button>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-label">Edit</button>
+        <div class="menu-items">
+          <button data-action="undo">Undo<kbd>Ctrl+Z</kbd></button>
+          <button data-action="redo">Redo<kbd>Ctrl+Y</kbd></button>
+          <hr />
+          <button data-action="cut">Cut<kbd>Ctrl+X</kbd></button>
+          <button data-action="copy">Copy<kbd>Ctrl+C</kbd></button>
+          <button data-action="paste">Paste<kbd>Ctrl+V</kbd></button>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-label">View</button>
+        <div class="menu-items">
+          <button data-action="history">Show history<kbd>Ctrl+H</kbd></button>
+          <button data-action="show-all">Show all windows</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-label">Help</button>
+        <div class="menu-items">
+          <button data-action="help">Help<kbd>F1</kbd></button>
+          <button data-action="check-updates">Check for updates</button>
+          <button data-action="about">About</button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="panes" id="panes">
+      <section class="pane pane-input" id="pane-input">
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
+          placeholder="x = 1&#10;y = 1&#10;x + y&#10;10 km to m&#10;20 usd to eur&#10;now('UTC')"></textarea>
+        <button class="gear" id="gear" title="Settings" tabindex="-1">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+      </section>
+
+      <div class="splitter" id="splitter"></div>
+
+      <section class="pane pane-results" id="pane-results">
+        <div class="results" id="results"></div>
+        <div class="totalbar" id="totalbar">
+          <span class="total-label" id="total-label">Total:</span>
+          <span class="total-value" id="total-value" title="Click to copy"></span>
+          <button class="switch" id="total-switch" role="switch" aria-checked="true"
+            aria-label="Toggle running total" tabindex="-1"><span class="knob"></span></button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Resize grips; the window is frameless so we drive resizing ourselves -->
+    <div class="grip grip-n" data-direction="North"></div>
+    <div class="grip grip-s" data-direction="South"></div>
+    <div class="grip grip-w" data-direction="West"></div>
+    <div class="grip grip-e" data-direction="East"></div>
+    <div class="grip grip-nw" data-direction="NorthWest"></div>
+    <div class="grip grip-ne" data-direction="NorthEast"></div>
+    <div class="grip grip-sw" data-direction="SouthWest"></div>
+    <div class="grip grip-se" data-direction="SouthEast"></div>
+  </div>
+
+  <div class="overlay" id="overlay" hidden>
+    <!-- Settings -->
+    <div class="dialog" id="dialog-settings" hidden>
+      <h1>Settings</h1>
+
+      <fieldset>
+        <legend>Theme</legend>
+        <div id="theme-options" class="options"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Appearance</legend>
+        <div class="row">
+          <span class="hint">Opacity</span>
+          <span class="hint" id="opacity-value">100%</span>
+        </div>
+        <input type="range" id="opacity" min="25" max="100" step="1" value="100" />
+        <label class="check">
+          <input type="checkbox" id="always-on-top" /><span>Always on top</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Startup</legend>
+        <label class="check">
+          <input type="checkbox" id="startup" /><span>Start when Windows boots</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Windows</legend>
+        <div class="options">
+          <label class="check">
+            <input type="radio" name="window-mode" value="previous" /><span>Keep previous window only</span>
+          </label>
+          <label class="check">
+            <input type="radio" name="window-mode" value="new" /><span>Start fresh each time</span>
+          </label>
+          <label class="check">
+            <input type="radio" name="window-mode" value="both" /><span>Keep all open windows</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Quick actions</legend>
+        <button class="btn" data-action="new-window">New calculator window</button>
+        <button class="btn" data-action="history">Show command history</button>
+        <button class="btn" data-action="check-updates">Check for updates</button>
+      </fieldset>
+
+      <p class="hint" id="update-status"></p>
+
+      <div class="dialog-actions">
+        <button class="btn" data-action="about">About</button>
+        <button class="btn" data-action="help">Help</button>
+        <span class="spacer"></span>
+        <button class="btn" data-close>Close</button>
+      </div>
+    </div>
+
+    <!-- Command history -->
+    <div class="dialog" id="dialog-history" hidden>
+      <h1>Command history</h1>
+      <div class="history" id="history-list"></div>
+      <div class="dialog-actions">
+        <button class="btn btn-danger" id="history-clear">Clear</button>
+        <span class="spacer"></span>
+        <button class="btn" data-close>Close</button>
+      </div>
+    </div>
+
+    <!-- About and Help share one message dialog -->
+    <div class="dialog" id="dialog-message" hidden>
+      <h1 id="message-title">About</h1>
+      <pre class="message" id="message-body"></pre>
+      <div class="dialog-actions">
+        <span class="spacer"></span>
+        <button class="btn" data-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
