@@ -168,12 +168,16 @@ The signing keypair lives in `src-tauri/widgetcalc.key` (private, git-ignored)
 and `src-tauri/widgetcalc.key.pub` (public, committed, and pasted into
 `tauri.conf.json` as `plugins.updater.pubkey`).
 
-Add two repository secrets under **Settings → Secrets and variables → Actions**:
+Add one repository secret under **Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 | --- | --- |
 | `TAURI_SIGNING_PRIVATE_KEY` | the full contents of `src-tauri/widgetcalc.key` |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | empty (the key has no password) |
+
+The key has no password, and the workflow passes an empty one as a literal.
+Do not move that into a secret: GitHub does not reliably export an empty
+secret into the job, and the signer then fails with *"Wrong password for that
+key"* after an otherwise successful build.
 
 To copy the private key to the clipboard:
 
