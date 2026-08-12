@@ -1,6 +1,6 @@
 [package]
 name = "widget-calculator"
-version = "0.1.0"
+version = "0.1.1"
 description = "Multi-window widget calculator with variables, unit and currency conversion, and themes"
 authors = ["Alejandro Padilla"]
 edition = "2021"
