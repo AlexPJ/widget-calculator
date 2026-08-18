@@ -5,7 +5,6 @@ mod application;
 mod core;
 mod infra;
 
-use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
 use app::state::AppContext;
@@ -76,8 +75,10 @@ fn main() {
 /// not happened, and removing it is what stops it happening twice. A flag would
 /// only add a way for the two to disagree.
 ///
-/// Opting in by default on a fresh install *is* flagged, because there the
-/// state file is the only record that we already asked.
+/// A fresh install is left opted *out*. Writing a `Run` entry nobody asked for
+/// is both a surprise to the user and a heuristic that antivirus engines score
+/// against unsigned binaries; the tray menu and the settings dialog are the
+/// only things that turn it on.
 fn configure_startup(app: &tauri::AppHandle) {
     if infra::legacy::remove_legacy_startup_entry()
         && !app.autolaunch().is_enabled().unwrap_or(false)
@@ -85,19 +86,5 @@ fn configure_startup(app: &tauri::AppHandle) {
         if let Err(error) = app.autolaunch().enable() {
             eprintln!("Could not carry the start-up setting over: {error}");
         }
-    }
-
-    let startup_initialized = {
-        let context = app.state::<AppContext>();
-        let workspace = context.workspace();
-        workspace.startup_initialized
-    };
-    if !startup_initialized {
-        if let Err(error) = app.autolaunch().enable() {
-            eprintln!("Could not enable start-up on first run: {error}");
-        }
-        let context = app.state::<AppContext>();
-        context.workspace().startup_initialized = true;
-        context.save_soon();
     }
 }
