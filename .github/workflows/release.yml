@@ -1,8 +1,8 @@
 name: Release
 
 # Tag a commit with vX.Y.Z (matching the version in tauri.conf.json and
-# Cargo.toml) and this builds, signs and publishes the installer, plus the
-# latest.json the in-app updater reads.
+# Cargo.toml) and this builds, signs and publishes the installers for every
+# platform, plus the latest.json the in-app updater reads.
 on:
   push:
     tags:
@@ -14,12 +14,54 @@ permissions:
 
 jobs:
   release:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      # Every job appends its own platform to the same latest.json, which
+      # tauri-action does by merging into the asset already on the release.
+      # That is a read-modify-write, so running the jobs one at a time is what
+      # stops the later ones from racing and publishing an updater manifest
+      # with only their own platform in it.
+      max-parallel: 1
+      matrix:
+        include:
+          - platform: windows-latest
+            rust-targets: ""
+            build-args: ""
+          - platform: macos-latest
+            # The macOS runners are Apple Silicon, so an Intel Mac would get
+            # nothing without asking for the fat binary explicitly.
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+            build-args: "--target universal-apple-darwin"
+          - platform: ubuntu-22.04
+            rust-targets: ""
+            build-args: ""
+
+    runs-on: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v4
 
+      # webkit2gtk draws the windows, appindicator backs the tray icon, and
+      # patchelf is what the AppImage bundler uses to rewrite the runtime paths.
+      # Pinned to 22.04 because 24.04 ships a webkit2gtk that Tauri 2 does not
+      # build against.
+      - name: Install the Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            libssl-dev \
+            patchelf \
+            build-essential \
+            file
+
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
 
       - uses: swatinem/rust-cache@v2
         with:
@@ -32,7 +74,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Signs the installer so the updater will accept it. The key comes
+          # Signs the artifacts so the updater will accept them. The key comes
           # from src-tauri/widgetcalc.key, which is never committed.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           # The key was generated without a password. Kept as a literal rather
@@ -46,9 +88,24 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Widget Calculator ${{ github.ref_name }}
           releaseBody: |
-            Download `WidgetCalculator_*_x64-setup.exe` below and run it.
+            **Windows** — download `WidgetCalculator_*_x64-setup.exe` and run it.
+
+            **macOS** — download `WidgetCalculator_*_universal.dmg` and drag the
+            app to Applications. It is signed ad-hoc rather than notarized, so
+            the first launch is blocked: open **System Settings → Privacy &
+            Security** and press **Open Anyway**.
+
+            **Linux** — download the `.AppImage` (works anywhere, and is the
+            only Linux format the in-app updater can replace), or the `.deb` /
+            `.rpm` for your package manager.
 
             Already installed? The app updates itself: **Settings -> Check for updates**.
           releaseDraft: false
-          prerelease: false
+          # A tag carrying a semver pre-release suffix (v0.1.2-rc1) publishes as
+          # a pre-release. This is load-bearing, not cosmetic: GitHub's "latest
+          # release" skips pre-releases, and the updater endpoint is
+          # releases/latest/download/latest.json — so without this an RC tag
+          # would immediately be offered as an update to every install.
+          prerelease: ${{ contains(github.ref_name, '-') }}
           includeUpdaterJson: true
+          args: ${{ matrix.build-args }}

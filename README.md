@@ -2,12 +2,14 @@
 
 # 🧮 Widget Calculator
 
-### A tiny, always-there calculator widget for Windows — variables, units, live currency and running totals
+### A tiny, always-there calculator widget — variables, units, live currency and running totals
 
 [![Release](https://img.shields.io/github/v/release/AlexPJ/widget-calculator?style=for-the-badge&color=a6e22e)](https://github.com/AlexPJ/widget-calculator/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/AlexPJ/widget-calculator/total?style=for-the-badge&color=a6e22e)](https://github.com/AlexPJ/widget-calculator/releases)
 [![License](https://img.shields.io/github/license/AlexPJ/widget-calculator?style=for-the-badge&color=a6e22e)](LICENSE)
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#)
+[![macOS](https://img.shields.io/badge/macOS-10.15%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](#)
+[![Linux](https://img.shields.io/badge/Linux-deb%20%7C%20rpm%20%7C%20AppImage-FCC624?style=for-the-badge&logo=linux&logoColor=black)](#)
 [![Rust + Tauri](https://img.shields.io/badge/Rust%20%2B%20Tauri-2-000?style=for-the-badge&logo=tauri&logoColor=white)](#)
 
 **[⬇️ Download the latest version](https://github.com/AlexPJ/widget-calculator/releases/latest)**
@@ -19,7 +21,7 @@
 Type a column of expressions, read the answers next to them. Every line is
 evaluated as you type, variables carry from one line to the next, and the bar
 at the bottom keeps a running total. It lives in the system tray, floats above
-your other windows, and starts with Windows if you want it to.
+your other windows, and starts with your desktop session if you want it to.
 
 ## ✨ Features
 
@@ -39,22 +41,42 @@ your other windows, and starts with Windows if you want it to.
 
 ## 📊 Size
 
-No Node, no bundler, no packaged browser — the UI is plain static files
-embedded in the binary, drawn by the WebView2 runtime Windows already ships.
+No Node, no bundler, no packaged browser — the UI is 37 KB of plain static
+files embedded in the binary, drawn by the webview each OS already ships:
+WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux.
 
-| Artifact | Size |
-| --- | --- |
-| **Installer** (NSIS `-setup.exe`) | **1.94 MB** |
-| Standalone executable | 6.02 MB |
-| Bundled frontend (HTML/CSS/JS) | 36 KB |
+| Platform | Installer | Installed application |
+| --- | --- | --- |
+| Windows | **1.94 MB** (NSIS `-setup.exe`) | 6.02 MB |
+| macOS | **4.78 MB** (universal `.dmg`) | 10.98 MB |
+
+The published macOS build is universal, so it carries both an Intel and an
+Apple Silicon copy of the binary. Building for one architecture alone roughly
+halves it: 2.37 MB and 5.00 MB on Apple Silicon.
+
+Linux sizes are not listed yet — the `.deb`, `.rpm` and `.AppImage` land with
+the first release built after Linux was added.
 
 ## ⬇️ Download and install
 
-1. Go to the **[releases page](https://github.com/AlexPJ/widget-calculator/releases/latest)**.
-2. Download `WidgetCalculator_x.y.z_x64-setup.exe`.
-3. Run it. Windows SmartScreen may warn about an unknown publisher: *More info → Run anyway*.
+Everything is on the **[releases page](https://github.com/AlexPJ/widget-calculator/releases/latest)**.
 
-> Requirements: Windows 10/11 (x64). WebView2 ships with Windows 11 and with most up-to-date Windows 10 installs.
+**Windows** — download `WidgetCalculator_x.y.z_x64-setup.exe` and run it.
+SmartScreen may warn about an unknown publisher: *More info → Run anyway*.
+Needs Windows 10/11 (x64); WebView2 ships with Windows 11 and with most
+up-to-date Windows 10 installs.
+
+**macOS** — download `WidgetCalculator_x.y.z_universal.dmg`, open it and drag
+the app to Applications. Needs macOS 10.15 or newer; runs natively on both
+Apple Silicon and Intel. The app is signed ad-hoc rather than notarized, so
+macOS blocks the first launch — open **System Settings → Privacy & Security**
+and press **Open Anyway**.
+
+**Linux** — download the `.AppImage`, make it executable and run it, or install
+the `.deb` / `.rpm` with your package manager. Needs WebKitGTK 4.1 and, for the
+tray icon, an AppIndicator-compatible desktop. The AppImage is the only Linux
+format the in-app updater can replace in place; `.deb` and `.rpm` installs
+update through your package manager instead.
 
 Once installed, the app updates itself: **Settings → Check for updates**.
 
@@ -72,16 +94,21 @@ sqrt(9)          →  3
 now('UTC')       →  2026-08-09 01:13:44 UTC
 ```
 
-| Action | How |
-| --- | --- |
-| New window | `Ctrl+N`, or the tray menu |
-| Settings | the gear at the bottom-left, or `Ctrl+,` |
-| Command history | `Ctrl+H` |
-| Menu bar | press `Alt` |
-| Help | `F1` |
-| Copy a result | click the line |
-| Copy the total | click the total |
-| Quit | `Ctrl+Q`, or tray → Quit |
+| Action | Windows & Linux | macOS |
+| --- | --- | --- |
+| New window | `Ctrl+N`, or the tray menu | `⌘N`, or the tray menu |
+| Settings | the gear at the bottom-left, or `Ctrl+,` | the gear, or `⌘,` |
+| Command history | `Ctrl+H` | `⌘Y` |
+| Menu bar | press `Alt` | press `⌥` |
+| Help | `F1` | `F1` or `⌘?` |
+| Quit | `Ctrl+Q`, or tray → Quit | `⌘Q`, or tray → Quit |
+
+Click a result line to copy it, and click the total to copy the total.
+
+Two macOS shortcuts are not just Ctrl swapped for Command. `⌘H` is the
+system-wide *hide application* and never reaches the app, so history follows
+Safari onto `⌘Y`. And `F1` is a brightness key on a Mac keyboard unless you
+have turned that off, so help also answers to `⌘?`.
 
 Closing a window **discards** it and its contents — except the last one, which
 **hides** to the tray so nothing is lost and the app stays one click away. To
@@ -107,21 +134,38 @@ mismatched dimensions is an error rather than a silent wrong answer.
 
 ## 🛠️ Build from source
 
-Requirements: [Rust](https://rustup.rs) (rustup) and VS Build Tools with C++.
+[Rust](https://rustup.rs) via rustup, plus your platform's toolchain:
 
-```powershell
+| Platform | Also needs |
+| --- | --- |
+| Windows | VS Build Tools with C++ |
+| macOS | Xcode Command Line Tools — `xcode-select --install` |
+| Linux | `libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf build-essential` |
+
+```bash
 git clone https://github.com/AlexPJ/widget-calculator.git
 cd widget-calculator/src-tauri
-cargo test                         # 88 unit tests
-cargo build --release              # exe at target/release/widget-calculator.exe
+cargo test                         # 90 unit tests
+cargo build --release              # binary at target/release/widget-calculator
 ```
 
 For the installer:
 
-```powershell
+```bash
 cargo install tauri-cli --locked
-cargo tauri build
+cargo tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
 ```
+
+`cargo tauri build` packages whatever the host can produce and ignores the
+rest, so the same command yields the NSIS installer on Windows, a `.dmg` on
+macOS, and `.deb` / `.rpm` / `.AppImage` on Linux. On macOS, add
+`--target universal-apple-darwin` to cover Intel Macs too (install the extra
+architecture first with `rustup target add x86_64-apple-darwin`).
+
+The `--config` override is what keeps a plain local build working:
+`createUpdaterArtifacts` is on, and signing those artifacts needs the private
+key, which only CI has. Drop the override when you do have the key — see
+*Building a release locally* below.
 
 The release profile is tuned for size (`opt-level="z"`, LTO, `strip`,
 `panic=abort`).
@@ -151,12 +195,18 @@ Releases are built and signed by GitHub Actions.
 
 1. Bump the version in `src-tauri/tauri.conf.json` **and** `src-tauri/Cargo.toml`.
 2. Commit, then tag and push:
-   ```powershell
+   ```bash
    git tag v0.2.0
    git push origin v0.2.0
    ```
-3. The **Release** workflow builds on a Windows runner, signs the installer and
-   publishes a GitHub release with the `.exe`, its `.sig` and `latest.json`.
+3. The **Release** workflow builds on Windows, macOS and Linux runners, signs
+   every artifact and publishes a GitHub release with the installers, their
+   `.sig` files and `latest.json`.
+
+The three jobs run one at a time rather than in parallel. Each of them merges
+its own platform into the same `latest.json` already attached to the release,
+and that read-modify-write would otherwise race: the loser would publish an
+updater manifest listing only its own platform.
 
 The installed app compares its version against `latest.json` (served from
 `.../releases/latest/download/latest.json`) and offers to update.
@@ -182,7 +232,11 @@ key"* after an otherwise successful build.
 To copy the private key to the clipboard:
 
 ```powershell
-Get-Content src-tauri\widgetcalc.key -Raw | Set-Clipboard
+Get-Content src-tauri\widgetcalc.key -Raw | Set-Clipboard   # Windows
+```
+
+```bash
+pbcopy < src-tauri/widgetcalc.key                           # macOS
 ```
 
 Keep a backup of that file somewhere safe. Lose it and existing installs can no
@@ -199,8 +253,15 @@ $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
 cargo tauri build
 ```
 
-The installer and its signature land in
-`src-tauri/target/release/bundle/nsis/`.
+```bash
+export TAURI_SIGNING_PRIVATE_KEY="$(cat src-tauri/widgetcalc.key)"
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+cargo tauri build
+```
+
+Each bundle and its signature land under `src-tauri/target/release/bundle/`, in
+a directory named after the format — `nsis/`, `dmg/`, `deb/`, `rpm/`,
+`appimage/`.
 
 </details>
 
