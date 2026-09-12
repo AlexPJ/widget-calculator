@@ -21,34 +21,34 @@
       <div class="menu">
         <button class="menu-label">File</button>
         <div class="menu-items">
-          <button data-action="new-window">New window<kbd>Ctrl+N</kbd></button>
-          <button data-action="settings">Settings...<kbd>Ctrl+,</kbd></button>
+          <button data-action="new-window">New window<kbd data-accel="Mod+N">Ctrl+N</kbd></button>
+          <button data-action="settings">Settings...<kbd data-accel="Mod+,">Ctrl+,</kbd></button>
           <hr />
-          <button data-action="quit">Quit<kbd>Ctrl+Q</kbd></button>
+          <button data-action="quit">Quit<kbd data-accel="Mod+Q">Ctrl+Q</kbd></button>
         </div>
       </div>
       <div class="menu">
         <button class="menu-label">Edit</button>
         <div class="menu-items">
-          <button data-action="undo">Undo<kbd>Ctrl+Z</kbd></button>
-          <button data-action="redo">Redo<kbd>Ctrl+Y</kbd></button>
+          <button data-action="undo">Undo<kbd data-accel="Mod+Z">Ctrl+Z</kbd></button>
+          <button data-action="redo">Redo<kbd data-accel="Mod+Y" data-accel-mac="Shift+Mod+Z">Ctrl+Y</kbd></button>
           <hr />
-          <button data-action="cut">Cut<kbd>Ctrl+X</kbd></button>
-          <button data-action="copy">Copy<kbd>Ctrl+C</kbd></button>
-          <button data-action="paste">Paste<kbd>Ctrl+V</kbd></button>
+          <button data-action="cut">Cut<kbd data-accel="Mod+X">Ctrl+X</kbd></button>
+          <button data-action="copy">Copy<kbd data-accel="Mod+C">Ctrl+C</kbd></button>
+          <button data-action="paste">Paste<kbd data-accel="Mod+V">Ctrl+V</kbd></button>
         </div>
       </div>
       <div class="menu">
         <button class="menu-label">View</button>
         <div class="menu-items">
-          <button data-action="history">Show history<kbd>Ctrl+H</kbd></button>
+          <button data-action="history">Show history<kbd data-accel="Mod+H" data-accel-mac="Mod+Y">Ctrl+H</kbd></button>
           <button data-action="show-all">Show all windows</button>
         </div>
       </div>
       <div class="menu">
         <button class="menu-label">Help</button>
         <div class="menu-items">
-          <button data-action="help">Help<kbd>F1</kbd></button>
+          <button data-action="help">Help<kbd data-accel="F1" data-accel-mac="Mod+?">F1</kbd></button>
           <button data-action="check-updates">Check for updates</button>
           <button data-action="about">About</button>
         </div>
@@ -116,7 +116,7 @@
       <fieldset>
         <legend>Startup</legend>
         <label class="check">
-          <input type="checkbox" id="startup" /><span>Start when Windows boots</span>
+          <input type="checkbox" id="startup" /><span>Start automatically at login</span>
         </label>
       </fieldset>
 

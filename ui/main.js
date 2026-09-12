@@ -11,9 +11,26 @@ const $ = (id) => document.getElementById(id);
 
 const EVALUATE_DEBOUNCE_MS = 120;
 
+// The accelerator key is Ctrl everywhere except macOS, where it is Command.
+// Everything that names a shortcut — the menu hints, the help text and the
+// keydown handler below — reads it from here so the three cannot drift apart.
+const IS_MAC = /mac/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? "");
+
+const ACCEL_GLYPHS = { Mod: "\u2318", Shift: "\u21e7", Alt: "\u2325" };
+const ACCEL_WORDS = { Mod: "Ctrl", Shift: "Shift", Alt: "Alt" };
+
+// "Shift+Mod+Z" reads as "Ctrl+Shift+Z" on Windows and Linux, and as the
+// glyph run macOS uses, where modifiers carry no separator.
+function renderAccel(spec) {
+  const parts = spec.split("+");
+  const key = parts.pop();
+  if (!IS_MAC) return [...parts.map((part) => ACCEL_WORDS[part] ?? part), key].join("+");
+  return parts.map((part) => ACCEL_GLYPHS[part] ?? part).join("") + key;
+}
+
 const ABOUT_TEXT =
   "Widget Calculator\n\n" +
-  "A resizable calculator widget for Windows with variables, unit " +
+  "A resizable calculator widget with variables, unit " +
   "conversions, live currency rates, running totals and themes.\n\n" +
   "Built with Rust and Tauri.";
 
@@ -27,7 +44,8 @@ const HELP_TEXT =
   "  200 * 10%\n" +
   "  sqrt(9)\n" +
   "  now('Europe/Madrid')\n\n" +
-  "Press Alt to show the menu bar. Click a result line to copy it.\n" +
+  `Press ${IS_MAC ? "Option" : "Alt"} to show the menu bar. ` +
+  "Click a result line to copy it.\n" +
   "Use the gear icon (bottom-left) for settings.\n" +
   "Closing a window discards it; the last one hides to the tray instead.";
 
@@ -380,6 +398,25 @@ $("gear").addEventListener("click", () => openDialog("dialog-settings"));
 
 // ------------------------------------------------------------- shortcuts
 
+// The menu hints ship with their Windows spelling so they still read correctly
+// if this script never runs; on macOS they are rewritten in place.
+for (const hint of document.querySelectorAll("kbd[data-accel]")) {
+  hint.textContent = renderAccel((IS_MAC && hint.dataset.accelMac) || hint.dataset.accel);
+}
+
+const SHORTCUTS = {
+  n: "new-window",
+  q: "quit",
+  ",": "settings",
+  // Ctrl+H is the obvious key for history on Windows, but on macOS Command+H
+  // is the system-wide "hide application" and never reaches the webview, so
+  // history follows Safari onto Command+Y instead.
+  [IS_MAC ? "y" : "h"]: "history",
+  // F1 is a brightness key on a Mac keyboard unless the user has opted out of
+  // that, so macOS also gets its usual Command+? for help.
+  ...(IS_MAC ? { "?": "help" } : {}),
+};
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Alt" && !event.repeat) {
     event.preventDefault();
@@ -400,15 +437,10 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (!event.ctrlKey || event.altKey) return;
-  const key = event.key.toLowerCase();
-  const shortcuts = {
-    n: "new-window",
-    q: "quit",
-    h: "history",
-    ",": "settings",
-  };
-  const action = shortcuts[key];
+  // AltGr arrives as Ctrl+Alt on Windows layouts, so a held Alt rules the
+  // combination out rather than triggering an action mid-word.
+  if (!(IS_MAC ? event.metaKey : event.ctrlKey) || event.altKey) return;
+  const action = SHORTCUTS[event.key.toLowerCase()];
   if (!action) return;
   event.preventDefault();
   Promise.resolve(actions[action]()).catch((error) => toast(String(error)));

@@ -9,13 +9,14 @@
   "app": {
     "withGlobalTauri": true,
     "windows": [],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": ["nsis", "dmg", "app"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -24,8 +25,13 @@
       "icons/icon.ico"
     ],
     "createUpdaterArtifacts": true,
+    "category": "Utility",
     "shortDescription": "Widget calculator",
-    "longDescription": "Multi-window widget calculator with variables, unit and currency conversion, running totals, command history and themes."
+    "longDescription": "Multi-window widget calculator with variables, unit and currency conversion, running totals, command history and themes.",
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-"
+    }
   },
   "plugins": {
     "updater": {
