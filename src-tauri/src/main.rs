@@ -68,7 +68,13 @@ fn main() {
         });
 }
 
-/// Take over "start with Windows" from whatever was there before.
+/// Take the start-on-login setting over from whatever was there before.
+///
+/// Only Windows has anything to take over: the PySide6 version registered its
+/// own `Run` entry, and `legacy::remove_legacy_startup_entry` reports `false`
+/// everywhere else, which leaves this a no-op on macOS and Linux. Turning the
+/// setting on is the autostart plugin's job on every platform — a LaunchAgent
+/// on macOS, a desktop entry on Linux, a `Run` value on Windows.
 ///
 /// Retiring the PySide6 registry entry is driven by the registry itself rather
 /// than a saved flag: finding the old entry is already proof the handover has

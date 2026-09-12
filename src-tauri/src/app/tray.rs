@@ -98,7 +98,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let startup = CheckMenuItem::with_id(
         app,
         "startup",
-        "Start when Windows boots",
+        "Start automatically at login",
         true,
         app.autolaunch().is_enabled().unwrap_or(false),
         None::<&str>,
