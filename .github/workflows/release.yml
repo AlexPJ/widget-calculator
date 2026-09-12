@@ -101,6 +101,11 @@ jobs:
 
             Already installed? The app updates itself: **Settings -> Check for updates**.
           releaseDraft: false
-          prerelease: false
+          # A tag carrying a semver pre-release suffix (v0.1.2-rc1) publishes as
+          # a pre-release. This is load-bearing, not cosmetic: GitHub's "latest
+          # release" skips pre-releases, and the updater endpoint is
+          # releases/latest/download/latest.json — so without this an RC tag
+          # would immediately be offered as an update to every install.
+          prerelease: ${{ contains(github.ref_name, '-') }}
           includeUpdaterJson: true
           args: ${{ matrix.build-args }}
